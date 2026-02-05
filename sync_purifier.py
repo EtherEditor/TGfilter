@@ -4,6 +4,7 @@ import time
 import re
 from telethon import TelegramClient, errors
 from telethon.sessions import StringSession
+from config import USER_StringSession,PRIVATE_channel_id
 
 # --- 环境变量读取 (SOTA 安全实践) ---
 API_ID = int(os.getenv('TG_API_ID', 2040))
@@ -29,34 +30,7 @@ CHANNEL_RULES = {
 }
 
 # ================= 核心逻辑引擎 =================
-
-async def main():
-    client = TelegramClient(StringSession(SESSION_STR), API_ID, API_HASH,proxy=proxy)
-            
-    now = time.time()
-    lookback_seconds = 1 * 60*60  # 3hour窗口
-    
-    async with client:
-        print(f"[*] 正在扫描 {CHANNEL_RULES}...")
-        
-    # 遍历你配置的所有频道
-        for channel_id, rules in CHANNEL_RULES.items():
-            print(f"[*] 正在处理频道: {channel_id}")
-            
-            blocked_group_ids = set()
-            message_buffer = []
-            
-            # 预编译正则，提高大规模匹配速度
-            # r'\b' 表示单词边界，防止把 'pizza' 里的 'zzz' 误删
-            kw_pattern = re.compile('|'.join(rules['blocked_keywords']), re.IGNORECASE)
-
-            async for msg in client.iter_messages(channel_id, limit=50):
-                # ... 时间窗口逻辑 ...
-                msg_age = now - msg.date.timestamp()
-                if msg_age > lookback_seconds:
-                    break
-
-                async def get_fast_fwd_name(msg):
+async def get_fast_fwd_name(msg):
                     # 1. 优先从内存已有的属性中取，这不需要联网
                     if not msg.fwd_from: return ""
                     
@@ -72,44 +46,89 @@ async def main():
                     except:
                         return "" # 拿不到就放弃，不要为了一个名字让整个系统停摆
                     
-                content = msg.text or ""
-                fwd_name = await get_fast_fwd_name(msg)
 
-                # --- 升级版判定逻辑 ---
-                is_blocked = (
-                    kw_pattern.search(content) or 
-                    any(name.lower() in fwd_name.lower() for name in rules['blocked_senders'])
-                )
+async def get_last_forwarded_id(client, target_id, source_channel_id):
+    """
+    探测目标频道，找到来自该源频道的最后一条消息 ID (水位线)
+    """
+    try:
+        # 扫描目标频道最近的 20 条消息
+        async for msg in client.iter_messages(target_id, limit=20):
+            if msg.forward and msg.forward.chat_id:
+                # 检查这条转发是否来自当前正在处理的源频道
+                # 注意：这里需要比对 ID
+                if msg.forward.chat_id == source_channel_id:
+                    # 返回原始消息的 ID
+                    return msg.forward.channel_post
+    except Exception as e:
+        print(f"[!] 水位线探测失败: {e}")
+    return None
 
-                if is_blocked and msg.grouped_id:
-                    blocked_group_ids.add(msg.grouped_id)
-                    continue
+async def main():
+    client = TelegramClient(StringSession(SESSION_STR), API_ID, API_HASH, proxy=proxy)
+    
+    async with client:
+        now = time.time()
+        # 即使有了 min_id，保留 12 小时作为兜底窗口也是好的实践
+        lookback_seconds = 12 * 3600 
+        
+        for channel_name, rules in CHANNEL_RULES.items():
+            try:
+                # 获取源频道实体
+                source_entity = await client.get_entity(channel_name)
+                print(f"[*] 正在处理: {source_entity.title} (ID: {source_entity.id})")
                 
-                if not is_blocked:
+                # --- 关键步骤：获取水位线 ---
+                last_id = await get_last_forwarded_id(client, TARGET_FEED, source_entity.id)
+                if last_id:
+                    print(f"[+] 找到水位线: {last_id}，将只同步新消息")
+                else:
+                    print(f"[-] 未找到历史水位线，将按时间窗口回溯")
+
+                blocked_group_ids = set()
+                message_buffer = []
+                kw_pattern = re.compile('|'.join(rules['blocked_keywords']), re.IGNORECASE) if rules['blocked_keywords'] else None
+
+                # 使用 min_id 参数，由 Telegram 服务端完成精确去重
+                async for msg in client.iter_messages(
+                    source_entity, 
+                    limit=100, 
+                    min_id=last_id if last_id else 0  # 核心：只抓比 last_id 新的消息
+                ):
+                    # 依然保留时间窗口兜底，防止首次运行抓取过多
+                    if (now - msg.date.timestamp()) > lookback_seconds:
+                        break
+
+                    content = (msg.text or "").lower()
+                    fwd_name = await get_fast_fwd_name(msg)
+
+                    is_blocked = (
+                        (kw_pattern and kw_pattern.search(content)) or 
+                        any(name.lower() in fwd_name.lower() for name in rules['blocked_senders'])
+                    )
+
+                    if is_blocked:
+                        if msg.grouped_id:
+                            blocked_group_ids.add(msg.grouped_id)
+                        continue
+                    
                     message_buffer.append(msg)
 
-            # 第二遍过滤：剔除那些“组内有人违规”的消息
-            final_buffer = []
-            for msg in message_buffer:
-                if msg.grouped_id and msg.grouped_id in blocked_group_ids:
-                    print(f"[X] 拦截组消息: 因为该组其他成员包含黑名单关键词")
-                    continue
-                final_buffer.append(msg)
+                # --- 组过滤与转发逻辑 (保持不变) ---
+                final_buffer = [m for m in message_buffer if not (m.grouped_id and m.grouped_id in blocked_group_ids)]
+                final_buffer.reverse()
 
-            # --- 关键：反转时序并转发 ---
-            final_buffer.reverse()
+                if final_buffer:
+                    print(f"[*] 准备转发 {len(final_buffer)} 条新精华...")
+                    for m in final_buffer:
+                        await client.forward_messages(TARGET_FEED, m)
+                        await asyncio.sleep(0.5)
+                else:
+                    print(f"[*] 没有检测到新消息。")
 
-            print(f"[*] 过滤完成，准备按时间正序转发 {len(final_buffer)} 条消息...")
+            except Exception as e:
+                print(f"[!] 频道 {channel_name} 异常: {e}")
 
-            for msg in final_buffer:
-                try:
-                    await client.forward_messages(TARGET_FEED, msg)
-                    # 稍微增加一点延迟，模拟人类行为，防止触发 TG 的 Flood Limit
-                    await asyncio.sleep(0.5) 
-                except Exception as e:
-                    print(f"[!] 转发失败: {e}")
-
-        print(f"[Summary] 同步任务结束。")
 
 if __name__ == '__main__':
     print('start to twirl')
