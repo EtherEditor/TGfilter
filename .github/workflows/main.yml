@@ -1,8 +1,8 @@
 name: TG_Purifier_Service
-
+  
 on:
   schedule:
-    - cron: '*/59 * * * *'  # 每 59 分钟执行一次 (UTC 时间)
+    - cron: '49 * * * *'  #Runs at 49 minutes past the hour
   workflow_dispatch:        # 允许你在网页上手动点击按钮立即执行
 
 jobs:
