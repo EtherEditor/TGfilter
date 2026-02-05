@@ -1,31 +1,42 @@
-name: TG_Purifier_Service
-  
+name: TG_Purifier_Matrix_Service
+
 on:
   schedule:
-    - cron: '49 * * * *'  #Runs at 49 minutes past the hour
-  workflow_dispatch:        # 允许你在网页上手动点击按钮立即执行
+    - cron: '15 * * * *'
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+  purify:
+    strategy:
+      # 这里的 matrix 就是你的“频道清单”
+      matrix:
+        channel: [Seele_Leaks, HXG_Leak]
+      # 设为 1 表示一个一个跑，天然形成频道间的“时间间隔”
+      max-parallel: 1 
+      fail-fast: false
 
+    runs-on: ubuntu-latest
+    
+    # 【核心改进】并发锁现在是基于“频道名”的
+    # 这意味着：Seele_Leaks 的新任务会取消旧的 Seele_Leaks，但绝不会影响 HXG_Leak
+    concurrency:
+      group: tg-purifier-${{ matrix.channel }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-
-      - name: Install Dependencies
-        run: |
-          pip install telethon pysocks
-
-      - name: Run Purifier
+      - name: Install Deps
+        run: pip install telethon pysocks
+      - name: Run Task
         env:
-          # 将 GitHub Secrets 映射为脚本可见的环境变量
           TG_API_ID: ${{ secrets.TG_API_ID }}
           TG_API_HASH: ${{ secrets.TG_API_HASH }}
           TG_STRING_SESSION: ${{ secrets.TG_STRING_SESSION }}
           PRIVATE_CHANNEL_ID: ${{ secrets.PRIVATE_CHANNEL_ID }}
+          # 告诉脚本本次 Job 只负责哪一个频道
+          CURRENT_CHANNEL: ${{ matrix.channel }}
         run: python sync_purifier.py
