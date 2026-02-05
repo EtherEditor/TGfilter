@@ -25,7 +25,12 @@ CHANNEL_RULES = {
     # 'HXG_Leak': {
     #     'blocked_keywords': ['ZZZ', 'HI3', 'AKEndfield', 'Endfield'],
     #     'blocked_senders': ['广告源']
-    # }
+    # },
+    
+    'homokeqing': {
+        'blocked_keywords': ['ZZZ', 'HI3', 'AKEndfield', 'Endfield'],
+        'blocked_senders': ['广告源']
+    }
     
 }
 
