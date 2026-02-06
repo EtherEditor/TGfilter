@@ -108,7 +108,7 @@ async def main():
     async with client:
         print(f"[*] 任务启动 -> 频道: {current_target}")
         now = time.time()
-        lookback = 8 * 3600 # 1.5 小时
+        lookback = 1.5 * 3600 # 1.5 小时
         
         try:
             source_entity = await client.get_entity(current_target)
