@@ -29,7 +29,7 @@ filter for TG   【currently not with AI used. Looking forward to a breakthrough
 
 ## 3. 实验记录：Failure Case 分析
 
-### 3.1 测试样本描述(见文末)
+### 3.1 测试样本描述(At the End are Samples)
 
 * **样本 A**：绝区零 (ZZZ) 角色艾莲·乔 (Ellen Joe) 剧情插画。
 * **样本 B & C**：绝区零角色艾莲、朱鸢的头像。
@@ -81,21 +81,21 @@ filter for TG   【currently not with AI used. Looking forward to a breakthrough
 <table>
   <tr>
     <td align="center">
-      <img src="[这里填SampleA的链接](https://github.com/user-attachments/assets/21bebd17-1241-454b-b111-b258d479c0da)" width="400px"/><br/>
+      <img src="https://github.com/user-attachments/assets/52cce3de-bb8a-48e1-8b52-a0b66e97771b" width="400px"/><br/>
       <b>Sample A: ZZZ Illustration</b>
     </td>
     <td align="center">
-      <img src="[这里填SampleB的链接](https://github.com/user-attachments/assets/6a621746-668b-45ff-86c3-ca235cb427f4)" width="200px"/><br/>
+      <img src="https://github.com/user-attachments/assets/2c52a8a3-e7c1-45da-b831-5caa40d8198c" width="200px"/><br/>
       <b>Sample B: ZZZ Avatar (Ellen)</b>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <img src="[这里填SampleC的链接](https://github.com/user-attachments/assets/b1781520-b97b-4cdf-8dff-ddace8740e61)" width="200px"/><br/>
+      <img src="https://github.com/user-attachments/assets/9ce21210-e907-4923-b867-de902f9f3627" width="200px"/><br/>
       <b>Sample C: ZZZ Avatar (Zhu Yuan)</b>
     </td>
     <td align="center">
-      <img src="[这里填SampleD的链接](https://github.com/user-attachments/assets/c988b3e2-1e05-467f-95a2-8086dd923ebd)" width="400px"/><br/>
+      <img src="https://github.com/user-attachments/assets/7ca7d5f3-c9e4-41dd-8a5b-4ea819971355" width="400px"/><br/>
       <b>Sample D: HSR Leak (Robin & Misha)</b>
     </td>
   </tr>
