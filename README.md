@@ -31,6 +31,7 @@ filter for TG   【currently not with AI used. Looking forward to a breakthrough
 
 ### 3.1 测试样本描述(At the End are Samples)
 
+Those descriptions were made by Gemini in 2026.2.6 which were definitely wrong.
 * **样本 A**：绝区零 (ZZZ) 角色艾莲·乔 (Ellen Joe) 剧情插画。
 * **样本 B & C**：绝区零角色艾莲、朱鸢的头像。
 * **样本 D**：星穹铁道 (HSR) 2.1+ 版本新角色知更鸟 (Robin) 与米沙 (Misha) 的插画。
