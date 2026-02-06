@@ -1,5 +1,5 @@
 # TGfilter
-filter for TG
+filter for TG   【currently not with AI used. Looking forward to a breakthrough!】
 
 这是一份为您定制的深度技术实验报告（Markdown 格式）。它不仅记录了对话，还从系统架构和 AI 研究的角度对本次“TG 消息过滤实验”进行了复盘，非常适合作为项目的 `EXPERIMENT_LOG.md` 或 `README` 补充文档。
 
