@@ -35,15 +35,22 @@ CHANNEL_RULES = {
 
 # ================= 核心逻辑引擎 =================
 def get_all_text(msg):
-    """【同步函数】全维度提取文本，解决 HI3 过滤失效。千万不要 await 它！"""
+    """深度递归提取所有可能的文本，解决 HI3 过滤失效"""
     texts = []
+    # 1. 直接文本
     if msg.text: texts.append(msg.text)
-    # 穿透到转发来源的原始消息
-    if msg.message and msg.message not in texts: texts.append(msg.message)
-    # 穿透到网页预览
+    # 2. 媒体描述 (Caption) - 很多图片/文件的字在这里
+    if msg.caption: texts.append(msg.caption)
+    # 3. 转发原文穿透 (解决图 3 这种 Forwarded File)
+    if msg.message: texts.append(msg.message)
+    # 4. 网页预览穿透
     if msg.media and hasattr(msg.media, 'webpage') and msg.media.webpage:
-        texts.append(getattr(msg.media.webpage, 'description', '') or '')
-        texts.append(getattr(msg.media.webpage, 'title', '') or '')
+        wp = msg.media.webpage
+        texts.extend([getattr(wp, 'title', '') or '', getattr(wp, 'description', '') or ''])
+    # 5. 文件名穿透 (处理某些直接发文件不带字的情况)
+    if msg.file and msg.file.name:
+        texts.append(msg.file.name)
+        
     return " ".join(filter(None, texts)).lower()
 
 
