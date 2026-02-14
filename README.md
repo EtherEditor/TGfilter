@@ -1,3 +1,4 @@
+New annotation added on 2026.2.14: "deprecated for now"
 # TGfilter
 filter for TG   【currently not with AI used. Looking forward to a breakthrough!】
 
